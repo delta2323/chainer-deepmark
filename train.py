@@ -19,21 +19,10 @@ parser.add_argument('--cudnn', '-c', action='store_true', help='True if using cu
 parser.add_argument('--batchsize', '-b', type=int, default=32, help='batchsize')
 args = parser.parse_args()
 
-
-if args.model == 'inception-v3-batchnorm':
-    model = L.InceptionV3()
-elif args.model == 'alex':
-    model = L.Alex()
-elif args.model == 'vgg':
-    model = L.VGG()
-elif args.model == 'resnet-50':
-    model = L.Resnet(50)
-else:
-    raise ValueError('Invalid model name:{}'.format(args.model))
-
 in_size = 10
 out_size = 3
 
+# mock network
 net = L.Linear(in_size, out_size)
 model = L.Classifier(net)
 
