@@ -12,13 +12,15 @@ import utils
 
 
 parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
-parser.add_argument('--predictor', '-p', type=str, default='inception-v3',
-                    choices=('inception-v3', 'alexnet', 'vgg', 'resnet-50', 'resnet-101', 'resnet-152'),
+parser.add_argument('--predictor', '-p', type=str, default='deepspeech2',
+                    choices=('deepspeech2', 'msr-5fc'),
                     help='Network architecture')
 parser.add_argument('--seed', '-s', type=int, defualt=0,
                     help='Random seed')
 parser.add_argument('--iteration', '-i', type=int, default=10,
                     help='The number of iteration to be averaged over.')
+parser.add_argument('--timestep', '-t', type=int, default=10,
+                    help='Timestep')
 parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
 parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
 parser.add_argument('--cache-level', '-C', type=str, default=None,
@@ -41,21 +43,10 @@ if args.gpu >= 0:
     cuda.cupy.random.seed(args.seed)
 
 
-in_size = 224
-in_channel = 3
-
-if args.predictor == 'inception-v3':
-    predictor = L.InceptionV3(use_cudnn=args.use_cudnn)
-elif args.predictor == 'alexnet':
-    predictor = L.Alex(use_cudnn=args.use_cudnn)
-elif args.predictor == 'vgg':
-    predictor = L.VGG(use_cudnn=args.use_cudnn)
-elif args.predictor == 'resnet-50':
-    predictor = L.ResNet50(use_cudnn=args.use_cudnn)
-elif args.predictor == 'resnet-101':
-    predictor = L.ResNet101(use_cudnn=args.use_cudnn)
-elif args.predictor == 'resnet-152':
-    predictor = L.ResNet152(use_cudnn=args.use_cudnn)
+if args.predictor == 'deepspeech2':
+    predictor = L.DeepSpeech2(use_cudnn=args.use_cudnn)
+elif args.predictor == 'msr-5fc':
+    predictor = L.MSR5FC(use_cudnn=args.use_cudnn)
 else:
     raise ValueError('Invalid architector:{}'.format(args.predictor))
 model = L.Classifier(predictor)
@@ -67,6 +58,7 @@ if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
     model.to_gpu()
 xp = cuda.cupy if args.gpu >= 0 else numpy
+
 
 start_iteration = 0 if args.cache_level is None else -1
 forward_time = 0.0
