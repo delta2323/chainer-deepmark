@@ -12,7 +12,7 @@ import six
 import utils
 
 
-parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
+parser = argparse.ArgumentParser(description='Deepmark benchmark for audio data.')
 parser.add_argument('--predictor', '-p', type=str, default='deepspeech2',
                     choices=('deepspeech2', 'fc5'),
                     help='Network architecture')
