@@ -1,10 +1,11 @@
 import argparse
 
 import chainer
+from chainer import functions as F
 from chainer import links as L
 from chainer import optimizers as O
 from chainer import cuda
-from chainer import function_hooks
+from chainer import utils as utils_
 import numpy
 import six
 
@@ -13,13 +14,13 @@ import utils
 
 parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
 parser.add_argument('--predictor', '-p', type=str, default='deepspeech2',
-                    choices=('deepspeech2', 'msr-5fc'),
+                    choices=('deepspeech2', 'fc5'),
                     help='Network architecture')
-parser.add_argument('--seed', '-s', type=int, defualt=0,
+parser.add_argument('--seed', '-s', type=int, default=0,
                     help='Random seed')
 parser.add_argument('--iteration', '-i', type=int, default=10,
                     help='The number of iteration to be averaged over.')
-parser.add_argument('--timestep', '-t', type=int, default=10,
+parser.add_argument('--timestep', '-t', type=int, default=200,
                     help='Timestep')
 parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
 parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
@@ -43,22 +44,30 @@ if args.gpu >= 0:
     cuda.cupy.random.seed(args.seed)
 
 
+freq_size = 100
+label_length = 20
+
 if args.predictor == 'deepspeech2':
-    predictor = L.DeepSpeech2(use_cudnn=args.use_cudnn)
-elif args.predictor == 'msr-5fc':
-    predictor = L.MSR5FC(use_cudnn=args.use_cudnn)
+    predictor = L.DeepSpeech2(use_cudnn=args.cudnn)
+    def loss_function(predict, label):
+        return F.connectionist_temporal_classification(predict, label, 0)
+elif args.predictor == 'fc5':
+    predictor = L.FC5(freq_size)
+    def loss_function(predict, label):
+        label = F.split_axis(label, label.data.shape[1], 1)
+        label = map(lambda l: F.reshape(l, (-1,)), label)
+        return sum(F.softmax_cross_entropy(p, l)
+                   for (p, l) in zip(predict, label))
 else:
     raise ValueError('Invalid architector:{}'.format(args.predictor))
-model = L.Classifier(predictor)
 
 optimizer = O.SGD()
-optimizer.setup(model)
+optimizer.setup(predictor)
 
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
     model.to_gpu()
 xp = cuda.cupy if args.gpu >= 0 else numpy
-
 
 start_iteration = 0 if args.cache_level is None else -1
 forward_time = 0.0
@@ -72,26 +81,27 @@ for iteration in six.moves.range(start_iteration, args.iteration):
 
     # data generation
     data = numpy.random.uniform(-1, 1,
-                                (args.batchsize, in_channels, in_size, in_size).astype(numpy.flaot32)
+                                (args.batchsize, args.timestep, freq_size)
+                                 ).astype(numpy.float32)
     data = chainer.Variable(xp.asarray(data))
-    label = numpy.empty((args.batchsize,), dtype=numpy.int32)
-    label.fill(0)
+    label = numpy.ones((args.batchsize, label_length,), dtype=numpy.int32)
     label = chainer.Variable(xp.asarray(label))
 
     # forward
-    with function_hooks.get_timer(xp) as h:
-        loss = model(data, label)
-    forward_time_one = h.total_time()
+    with utils_.get_timer(xp) as t:
+        predict = predictor(data)
+        loss = loss_function(predict, label)
+    forward_time_one = t.total_time()
 
     # backward
-    with function_hooks.get_timer(xp) as h:
+    with utils_.get_timer(xp) as t:
         loss.backward()
-    backward_time_one = h.total_time()
+    backward_time_one = t.total_time()
 
     # parameter update
-    with function_hooks.get_timer(xp) as h:
+    with utils_.get_timer(xp) as t:
         optimizer.update()
-    update_time_one = h.pass_through_time
+    update_time_one = t.total_time()
 
     if iteration < 0:
         print('Burn-in\t{}\t{}\t{}'.format(forward_time_one, backward_time_one, update_time_one))
