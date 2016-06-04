@@ -4,7 +4,7 @@ import chainer
 from chainer import links as L
 from chainer import optimizers as O
 from chainer import cuda
-from chainer import function_hooks
+from chainer import utils as utils_
 import numpy
 import six
 
@@ -13,9 +13,9 @@ import utils
 
 parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
 parser.add_argument('--predictor', '-p', type=str, default='inception-v3',
-                    choices=('inception-v3', 'alexnet', 'vgg', 'resnet-50', 'resnet-101', 'resnet-152'),
+                    choices=('inception-v3', 'alexnet', 'vgg', 'resnet-50'),
                     help='Network architecture')
-parser.add_argument('--seed', '-s', type=int, defualt=0,
+parser.add_argument('--seed', '-s', type=int, default=0,
                     help='Random seed')
 parser.add_argument('--iteration', '-i', type=int, default=10,
                     help='The number of iteration to be averaged over.')
@@ -42,20 +42,16 @@ if args.gpu >= 0:
 
 
 in_size = 224
-in_channel = 3
+in_channels = 3
 
 if args.predictor == 'inception-v3':
-    predictor = L.InceptionV3(use_cudnn=args.use_cudnn)
+    predictor = L.InceptionV3(use_cudnn=args.cudnn)
 elif args.predictor == 'alexnet':
-    predictor = L.Alex(use_cudnn=args.use_cudnn)
+    predictor = L.Alex(use_cudnn=args.cudnn)
 elif args.predictor == 'vgg':
-    predictor = L.VGG(use_cudnn=args.use_cudnn)
+    predictor = L.VGG(use_cudnn=args.cudnn)
 elif args.predictor == 'resnet-50':
-    predictor = L.ResNet50(use_cudnn=args.use_cudnn)
-elif args.predictor == 'resnet-101':
-    predictor = L.ResNet101(use_cudnn=args.use_cudnn)
-elif args.predictor == 'resnet-152':
-    predictor = L.ResNet152(use_cudnn=args.use_cudnn)
+    predictor = L.ResNet50(use_cudnn=args.cudnn)
 else:
     raise ValueError('Invalid architector:{}'.format(args.predictor))
 model = L.Classifier(predictor)
@@ -69,10 +65,10 @@ if args.gpu >= 0:
 xp = cuda.cupy if args.gpu >= 0 else numpy
 
 start_iteration = 0 if args.cache_level is None else -1
+
 forward_time = 0.0
 backward_time = 0.0
 update_time = 0.0
-
 print('iteration\tforward\tbackward\tupdate (in seconds)')
 for iteration in six.moves.range(start_iteration, args.iteration):
     if args.gpu >= 0:
@@ -80,26 +76,25 @@ for iteration in six.moves.range(start_iteration, args.iteration):
 
     # data generation
     data = numpy.random.uniform(-1, 1,
-                                (args.batchsize, in_channels, in_size, in_size).astype(numpy.flaot32)
+                                (args.batchsize, in_channels, in_size, in_size)).astype(numpy.float32)
     data = chainer.Variable(xp.asarray(data))
-    label = numpy.empty((args.batchsize,), dtype=numpy.int32)
-    label.fill(0)
+    label = numpy.zeros((args.batchsize,), dtype=numpy.int32)
     label = chainer.Variable(xp.asarray(label))
 
     # forward
-    with function_hooks.get_timer(xp) as h:
+    with utils_.get_timer(xp) as t:
         loss = model(data, label)
-    forward_time_one = h.total_time()
+    forward_time_one = t.total_time()
 
     # backward
-    with function_hooks.get_timer(xp) as h:
+    with utils_.get_timer(xp) as t:
         loss.backward()
-    backward_time_one = h.total_time()
+    backward_time_one = t.total_time()
 
     # parameter update
-    with function_hooks.get_timer(xp) as h:
+    with utils_.get_timer(xp) as t:
         optimizer.update()
-    update_time_one = h.pass_through_time
+    update_time_one = t.total_time()
 
     if iteration < 0:
         print('Burn-in\t{}\t{}\t{}'.format(forward_time_one, backward_time_one, update_time_one))
