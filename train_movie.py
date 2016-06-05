@@ -1,0 +1,109 @@
+import argparse
+
+import chainer
+from chainer import links as L
+from chainer import optimizers as O
+from chainer import cuda
+from chainer import utils as utils_
+import numpy
+import six
+
+import utils
+
+
+parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
+parser.add_argument('--predictor', '-p', type=str, default='c3d',
+                    choices=('c3d', ),
+                    help='Network architecture')
+parser.add_argument('--seed', '-s', type=int, default=0,
+                    help='Random seed')
+parser.add_argument('--iteration', '-i', type=int, default=10,
+                    help='The number of iteration to be averaged over.')
+parser.add_argument('--timestep', '-t', type=int, default=200,
+                    help='Timestep')
+parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
+parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
+parser.add_argument('--cache-level', '-C', type=str, default=None,
+                    choices=(None, 'memory', 'disk'),
+                    help='This option determines the type of the kernel cache used.'
+                    'By default, memory cache and disk cache are removed '
+                    'at the beginning of every iteration. '
+                    'Otherwise, elapsed times of each iteration are '
+                    'measured with corresponding cache enabled. '
+                    'If either cache is enabled, this script operates one additional '
+                    'iteration for burn-in before measurement. '
+                    'This iteration is not included in the mean elapsed time.'
+                    'If we do not use GPU, we do not clear cache at all regardless of the value of '
+                    'this option.')
+parser.add_argument('--batchsize', '-b', type=int, default=32, help='Batchsize')
+args = parser.parse_args()
+
+numpy.random.seed(args.seed)
+if args.gpu >= 0:
+    cuda.cupy.random.seed(args.seed)
+
+in_channels = 3
+in_flame = 16
+in_height = 112
+in_width = 112
+
+if args.predictor == 'c3d':
+    predictor = L.C3D(use_cudnn=args.cudnn)
+else:
+    raise ValueError('Invalid architector:{}'.format(args.predictor))
+model = L.Classifier(predictor)
+
+optimizer = O.SGD()
+optimizer.setup(model)
+
+if args.gpu >= 0:
+    cuda.get_device(args.gpu).use()
+    model.to_gpu()
+xp = cuda.cupy if args.gpu >= 0 else numpy
+
+start_iteration = 0 if args.cache_level is None else -1
+
+forward_time = 0.0
+backward_time = 0.0
+update_time = 0.0
+print('iteration\tforward\tbackward\tupdate (in seconds)')
+for iteration in six.moves.range(start_iteration, args.iteration):
+    if args.gpu >= 0:
+        utils.clear_cache(args.cache_level)
+
+    # data generation
+    data = numpy.random.uniform(-1, 1,
+                                (args.batchsize, in_channels, in_flame, in_height, in_width)
+                                 ).astype(numpy.float32)
+    data = chainer.Variable(xp.asarray(data))
+    label = numpy.zeros((args.batchsize,), dtype=numpy.int32)
+    label = chainer.Variable(xp.asarray(label))
+
+    # forward
+    with utils_.get_timer(xp) as t:
+        loss = model(data, label)
+    forward_time_one = t.total_time()
+
+    # backward
+    with utils_.get_timer(xp) as t:
+        loss.backward()
+    backward_time_one = t.total_time()
+
+    # parameter update
+    with utils_.get_timer(xp) as t:
+        optimizer.update()
+    update_time_one = t.total_time()
+
+    if iteration < 0:
+        print('Burn-in\t{}\t{}\t{}'.format(forward_time_one, backward_time_one, update_time_one))
+    else:
+        print('{}\t{}\t{}\t{}'.format(iteration, forward_time_one, backward_time_one, update_time_one))
+        forward_time += forward_time_one
+        backward_time += backward_time_one
+        update_time += update_time_one
+
+forward_time /= args.iteration
+backward_time /= args.iteration
+update_time /= args.iteration
+
+print('Mean\t{}\t{}\t{}'.format(forward_time, backward_time, update_time))
