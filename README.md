@@ -1,11 +1,11 @@
 # chainer-deepmark
 Evaluation scripts of Chainer for deepmark
 
-## Note
-Use `deepmark` branch of Chainer
-
 ## Usage
 
 ```
-python train.py
+python evaluate/train_image.py
+python evaluate/train_audio.py
+python evaluate/train_movie.py
+python evaluate/train_text.py
 ```
