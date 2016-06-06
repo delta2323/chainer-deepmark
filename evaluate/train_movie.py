@@ -4,11 +4,12 @@ import chainer
 from chainer import links as L
 from chainer import optimizers as O
 from chainer import cuda
-from chainer import utils as utils_
 import numpy
 import six
 
-import utils
+from deepmark_chainer import net
+from deepmark_chainer.utils import timer
+from deepmark_chainer.utils import cache
 
 
 parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
@@ -48,7 +49,7 @@ in_height = 112
 in_width = 112
 
 if args.predictor == 'c3d':
-    predictor = L.C3D(use_cudnn=args.cudnn)
+    predictor = net.c3d.C3D(use_cudnn=args.cudnn)
 else:
     raise ValueError('Invalid architector:{}'.format(args.predictor))
 model = L.Classifier(predictor)
@@ -69,7 +70,7 @@ update_time = 0.0
 print('iteration\tforward\tbackward\tupdate (in seconds)')
 for iteration in six.moves.range(start_iteration, args.iteration):
     if args.gpu >= 0:
-        utils.clear_cache(args.cache_level)
+        cache.clear_cache(args.cache_level)
 
     # data generation
     data = numpy.random.uniform(-1, 1,
@@ -80,17 +81,17 @@ for iteration in six.moves.range(start_iteration, args.iteration):
     label = chainer.Variable(xp.asarray(label))
 
     # forward
-    with utils_.get_timer(xp) as t:
+    with timer.get_timer(xp) as t:
         loss = model(data, label)
     forward_time_one = t.total_time()
 
     # backward
-    with utils_.get_timer(xp) as t:
+    with timer.get_timer(xp) as t:
         loss.backward()
     backward_time_one = t.total_time()
 
     # parameter update
-    with utils_.get_timer(xp) as t:
+    with timer.get_timer(xp) as t:
         optimizer.update()
     update_time_one = t.total_time()
 
