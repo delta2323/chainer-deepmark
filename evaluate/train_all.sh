@@ -15,7 +15,7 @@ do
     python train_movie.py -p ${predictor} -g -1 -b 2
 done
 
-for predictor in small_lstm big_lstm
+for predictor in small-lstm big-lstm
 do
     python train_text.py -p ${predictor} -g -1 -b 2
 done

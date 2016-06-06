@@ -25,8 +25,8 @@ parser.add_argument('--seq-length', '-t', type=int, default=200,
                     help='Sequence length')
 parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
 parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
-parser.add_argument('--cache-level', '-C', type=str, default=None,
-                    choices=(None, 'memory', 'disk'),
+parser.add_argument('--cache-level', '-C', type=str, default='none',
+                    choices=('none', 'memory', 'disk'),
                     help='This option determines the type of the kernel cache used.'
                     'By default, memory cache and disk cache are removed '
                     'at the beginning of every iteration. '
@@ -55,12 +55,12 @@ else:
 model = L.Classifier(predictor)
 model.compute_accuracy = False
 
-optimizer = O.SGD()
-optimizer.setup(model)
-
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
     model.to_gpu()
+optimizer = O.SGD()
+optimizer.setup(model)
+
 xp = cuda.cupy if args.gpu >= 0 else numpy
 
 start_iteration = 0 if args.cache_level is None else -1
