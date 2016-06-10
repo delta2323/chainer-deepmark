@@ -1,5 +1,5 @@
 # chainer-deepmark
-Evaluation scripts of Chainer for deepmark
+Evaluation scripts of Chainer for [deepmark](https://github.com/DeepMark/deepmark)
 
 ## Usage
 
