@@ -13,6 +13,8 @@ def _triplet(x):
     return x, x, x
 
 
+# Current Chainer does not have Convolution3D and max_pooling_3d.
+# These are mocked ones.
 class Convolution3D(link.Link):
 
     def __init__(self, in_channels, out_channels, ksize, stride=1, pad=0, use_cudnn=True):
