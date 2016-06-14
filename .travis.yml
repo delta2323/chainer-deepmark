@@ -1,0 +1,22 @@
+language: python
+
+matrix:
+  include:
+    - os: linux
+      python: "2.7"
+    - os: linux
+      python: "3.4"
+    - os: linux
+      python: "3.5.1"
+
+install:
+  - pip install chainer
+  - python setup.py sdist
+  - pip install dist/*.tar.gz
+  - pip install nose hacking
+
+script:
+  - flake8
+  - nosetests -a '!gpu' tests
+
+sudo: false
