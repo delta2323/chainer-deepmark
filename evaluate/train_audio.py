@@ -45,7 +45,7 @@ if args.gpu >= 0:
     cuda.cupy.random.seed(args.seed)
 
 
-freq_size = 100
+freq_size = 161
 label_length = 20
 
 if args.predictor == 'deepspeech2':
