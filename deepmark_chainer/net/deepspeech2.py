@@ -88,7 +88,7 @@ class ConvBN(link.Chain):
 
     def __init__(self, *args, **kwargs):
         conv = C.Convolution2D(*args, **kwargs)
-        out_channel = conv.W.data.shape[0]
+        out_channel = len(conv.W.data)
         batch_norm = B.BatchNormalization(out_channel)
         super(ConvBN, self).__init__(conv=conv, batch_norm=batch_norm)
 
