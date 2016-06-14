@@ -27,8 +27,8 @@ class BRNN(link.Chain):
 
     def __call__(self, xs, train=True):
         N = len(xs)
-        x_forward = [self.forward(x) for x in xs]
-        x_reverse = [self.reverse(xs[n]) for n
+        x_forward = [self.forward(x, train) for x in xs]
+        x_reverse = [self.reverse(xs[n], train) for n
                      in six.moves.range(N - 1, -1, -1)]
         x_reverse.reverse()
         return [x_f + x_r for x_f, x_r in zip(x_forward, x_reverse)]
@@ -47,6 +47,19 @@ class ConvBN(link.Chain):
         return self.batch_norm(x, test=not train)
 
 
+class LinearBN(link.Chain):
+
+    def __init__(self, *args, **kwargs):
+        linear = L.Linear(*args, **kwargs)
+        out_channel = len(linear.W.data)
+        batch_norm = B.BatchNormalization(out_channel)
+        super(LinearBN, self).__init__(linear=linear, batch_norm=batch_norm)
+
+    def __call__(self, x, train=True):
+        x = self.linear(x)
+        return self.batch_norm(x, test=not train)
+
+
 class Sequential(link.ChainList):
 
     def __call__(self, x, *args, **kwargs):
@@ -57,27 +70,44 @@ class Sequential(link.ChainList):
 
 class DeepSpeech2(link.Chain):
 
-    def __init__(self, rnn_unit='LSTM', use_cudnn=True):
-        c1 = ConvBN(1, 32, (41, 11), 2, use_cudnn=use_cudnn)
-        c2 = ConvBN(32, 32, (21, 11), 2, use_cudnn=use_cudnn)
-        c3 = ConvBN(32, 32, (21, 11), 2, use_cudnn=use_cudnn)
-        convolution = Sequential(c1, c2, c3)
-        brnn1 = BRNN(128, 100, rnn_unit=rnn_unit)
-        brnn2 = BRNN(100, 100, rnn_unit=rnn_unit)
-        recurrent = Sequential(brnn1, brnn2)
-        linear = L.Linear(100, 28)
+    def __init__(self, channel_dim=32, hidden_dim=1760, out_dim=29, rnn_unit='Linear', use_cudnn=True):
+        c1 = ConvBN(1, channel_dim, (5, 20), 2, use_cudnn=use_cudnn)
+        c2 = ConvBN(channel_dim, channel_dim, (5, 10), (1, 2), use_cudnn=use_cudnn)
+        convolution = Sequential(c1, c2)
+
+        brnn1 = BRNN(31 * channel_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn2 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn3 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn4 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn5 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn6 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn7 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        recurrent = Sequential(brnn1, brnn2, brnn3, brnn4,
+                               brnn5, brnn6, brnn7)
+
+        fc1 = LinearBN(hidden_dim, hidden_dim)
+        fc2 = L.Linear(hidden_dim, out_dim)
+        linear = link.ChainList(fc1, fc2)
         super(DeepSpeech2, self).__init__(convolution=convolution,
                                           recurrent=recurrent,
                                           linear=linear)
 
-    def __call__(self, x):
+    def _linear(self, xs, train=True):
+        ret = []
+        for x in xs:
+            x = self.linear[0](x, train)
+            x = self.linear[1](x)
+            ret.append(x)
+        return ret
+
+    def __call__(self, x, train=True):
         x = reshape.reshape(x, (len(x.data), 1) + x.data.shape[1:])
-        x = self.convolution(x)
+        x = self.convolution(x, train)
         xs = split_axis.split_axis(x, x.data.shape[2], 2)
         for x in xs:
             x.data = self.xp.ascontiguousarray(x.data)
         for r in self.recurrent:
             r.reset_state()
-        xs = self.recurrent(xs)
-        xs = [self.linear(x) for x in xs]
+        xs = self.recurrent(xs, train)
+        xs = self._linear(xs, train)
         return xs
