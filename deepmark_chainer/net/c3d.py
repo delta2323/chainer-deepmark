@@ -1,7 +1,6 @@
 from chainer import cuda
 from chainer.functions.activation import relu
 from chainer import link
-from chainer.links.connection import convolution_2d
 from chainer.links.connection import linear
 from chainer import variable
 from chainer.utils import conv
@@ -72,7 +71,6 @@ class C3D(link.Chain):
             fc7=linear.Linear(4096, 4096),
             fc8=linear.Linear(4096, 487))
         self.use_cudnn = use_cudnn
-
 
     def __call__(self, x):
         x = relu.relu(self.conv1a(x))

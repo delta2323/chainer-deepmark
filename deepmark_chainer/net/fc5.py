@@ -1,5 +1,4 @@
 from chainer import link
-from chainer.functions.array import concat
 from chainer.functions.array import split_axis
 from chainer.links.connection import linear
 

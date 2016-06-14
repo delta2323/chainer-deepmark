@@ -15,7 +15,7 @@ class StatefulLinearRNN(link.Chain):
     def __init__(self, in_size, out_size, batch_norm_type='upward'):
         super(StatefulLinearRNN, self).__init__(upward=L.Linear(in_size, out_size),
                                                 lateral=L.Linear(out_size, out_size))
-        if not batch_norm_type in ('none', 'upward', 'lateral', 'output'):
+        if batch_norm_type not in ('none', 'upward', 'lateral', 'output'):
             raise ValueError('Invalid batch_norm_type:{}'.format(batch_norm_type))
         self.batch_norm_type = batch_norm_type
 

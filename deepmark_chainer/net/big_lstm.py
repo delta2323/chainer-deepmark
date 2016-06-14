@@ -13,7 +13,7 @@ class BigLSTM(link.Chain):
     """
 
     http://arxiv.org/abs/1602.02410v2
-    
+
     """
 
     def __init__(self, vocab_size=10, rnn_unit='LSTM'):
