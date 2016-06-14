@@ -30,6 +30,7 @@ class BRNN(link.Chain):
         x_forward = [self.forward(x) for x in xs]
         x_reverse = [self.reverse(xs[n]) for n
                      in six.moves.range(N - 1, -1, -1)]
+        x_reverse.reverse()
         return [x_f + x_r for x_f, x_r in zip(x_forward, x_reverse)]
 
 
