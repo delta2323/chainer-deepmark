@@ -16,7 +16,7 @@ install:
   - pip install nose hacking
 
 script:
-  - flake8
   - nosetests -a '!gpu' tests
+  - bash -x evaluate/train_all.sh
 
 sudo: false
