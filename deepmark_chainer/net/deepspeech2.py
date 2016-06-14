@@ -10,6 +10,51 @@ from chainer.links.connection import gru
 from chainer.links.normalization import batch_normalization as B
 
 
+class StatefulLinearRNN(link.Chain):
+
+    def __init__(self, in_size, out_size, batch_norm_type='upward'):
+        super(StatefulLinearRNN, self).__init__(upward=L.Linear(in_size, out_size),
+                                                lateral=L.Linear(out_size, out_size))
+        if not batch_norm_type in ('none', 'upward', 'lateral', 'output'):
+            raise ValueError('Invalid batch_norm_type:{}'.format(batch_norm_type))
+        self.batch_norm_type = batch_norm_type
+
+        if batch_norm_type != 'none':
+            batch_norm = B.BatchNormalization(out_size)
+            self.add_link('batch_norm', batch_norm)
+
+        self.reset_state()
+
+    def to_cpu(self):
+        super(StatefulLinearRNN, self).to_cpu()
+        if self.h is not None:
+            self.h.to_cpu()
+
+    def to_gpu(self, device=None):
+        super(StatefulLinearRNN, self).to_gpu(device)
+        if self.h is not None:
+            self.h.to_gpu(device)
+
+    def reset_state(self):
+        self.h = None
+
+    def __call__(self, x, train=True):
+        h = self.upward(x)
+        if self.batch_norm_type == 'upward':
+            h = self.batch_norm(h)
+
+        if self.h is not None:
+            l = self.lateral(self.h)
+            if self.batch_norm_type == 'lateral':
+                l = self.batch_norm(l)
+            h += l
+
+        if self.batch_norm_type == 'output':
+            h = self.batch_norm(h)
+        self.h = h
+        return self.h
+
+
 class BRNN(link.Chain):
 
     def __init__(self, input_dim, output_dim, rnn_unit):
@@ -19,6 +64,11 @@ class BRNN(link.Chain):
         elif rnn_unit == 'GRU':
             forward = gru.StatefulGRU(output_dim, input_dim)
             reverse = gru.StatefulGRU(output_dim, input_dim)
+        elif rnn_unit == 'Linear':
+            forward = StatefulLinearRNN(input_dim, output_dim)
+            reverse = StatefulLinearRNN(input_dim, output_dim)
+        else:
+            raise ValueError('Invalid rnn_unit:{}'.format(rnn_unit))
         super(BRNN, self).__init__(forward=forward, reverse=reverse)
 
     def reset_state(self):
