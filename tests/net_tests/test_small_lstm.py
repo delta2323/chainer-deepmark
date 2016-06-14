@@ -25,4 +25,5 @@ class TestSmallLSTM(unittest.TestCase):
 
     @attr.gpu
     def test_forward_gpu(self):
+        self.l.to_gpu()
         self.check_forward(cuda.cupy)

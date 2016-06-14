@@ -11,7 +11,7 @@ from deepmark_chainer.net import deepspeech2
 class TestDeepSpeech2(unittest.TestCase):
 
     def setUp(self):
-        self.x = numpy.random.uniform(-1, 1, (2, 200, 100)).astype(numpy.float32)
+        self.x = numpy.random.uniform(-1, 1, (2, 200, 161)).astype(numpy.float32)
         self.l = deepspeech2.DeepSpeech2()
 
     def check_forward(self, xp):
@@ -23,5 +23,6 @@ class TestDeepSpeech2(unittest.TestCase):
 
     @attr.gpu
     def test_forward_gpu(self):
+        self.l.to_gpu()
         self.check_forward(cuda.cupy)
 
