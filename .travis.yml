@@ -17,6 +17,7 @@ install:
 
 script:
   - nosetests -a '!gpu' tests
-  - bash -x evaluate/train_all.sh
+  - cd evaluate
+  - bash -x train_all.sh
 
 sudo: false
