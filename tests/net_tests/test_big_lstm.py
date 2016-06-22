@@ -14,7 +14,7 @@ class TestBigLSTM(unittest.TestCase):
 
     def setUp(self):
         self.x = numpy.random.randint(0, 10, (1, 20)).astype(numpy.int32)
-        self.l = big_lstm.BigLSTM()
+        self.l = big_lstm.BigLSTM(10, 10)
 
     def check_forward(self, xp):
         x = chainer.Variable(xp.asarray(self.x))
