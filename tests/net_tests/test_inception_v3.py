@@ -1,20 +1,19 @@
 import unittest
 
 import numpy
-import six
 
 import chainer
 from chainer import cuda
 from chainer.testing import attr
 
-from deepmark_chainer.net import small_lstm
+from deepmark_chainer.net import inception_v3
 
 
-class TestSmallLSTM(unittest.TestCase):
+class TestInceptionV3(unittest.TestCase):
 
     def setUp(self):
-        self.x = numpy.random.randint(0, 10, (10, 20)).astype(numpy.int32)
-        self.l = small_lstm.SmallLSTM()
+        self.x = numpy.random.uniform(-1, 1, (1, 3, 299, 299)).astype(numpy.float32)
+        self.l = inception_v3.InceptionV3()
 
     def check_forward(self, xp):
         x = chainer.Variable(xp.asarray(self.x))
@@ -25,4 +24,5 @@ class TestSmallLSTM(unittest.TestCase):
 
     @attr.gpu
     def test_forward_gpu(self):
+        self.l.to_gpu()
         self.check_forward(cuda.cupy)

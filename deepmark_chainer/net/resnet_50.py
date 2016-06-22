@@ -58,13 +58,14 @@ class Block(link.Chain):
         for i in range(layer-1):
             links += [('b{}'.format(i+1), BottleNeckB(out_size, ch, use_cudnn=use_cudnn))]
 
-        for link in links:
-            self.add_link(*link)
+        for l in links:
+            self.add_link(*l)
         self.forward = links
 
     def __call__(self, x, train):
-        for name,_ in self.forward:
+        for name, _ in self.forward:
             f = getattr(self, name)
+            h = None
             h = f(x if name == 'a' else h, train)
 
         return h

@@ -7,4 +7,3 @@ from deepmark_chainer.net import inception_v3
 from deepmark_chainer.net import resnet_50
 from deepmark_chainer.net import small_lstm
 from deepmark_chainer.net import vgg
-

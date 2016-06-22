@@ -106,17 +106,17 @@ class InceptionV3(link.Chain):
             s1 = AuxConv(C.Convolution2D(768, 192, 1, use_cudnn=use_cudnn))
 
             # 7x7
-            s21 = AuxConv(C.Convolution2D(768, c, 1, use_cudnn=use_cudnn))
-            s22 = AuxConv(C.Convolution2D(c, c, (1, 7), pad=(0, 3), use_cudnn=use_cudnn))
-            s23 = AuxConv(C.Convolution2D(c, 192, (7, 1), pad=(3, 0), use_cudnn=use_cudnn))
+            s21 = AuxConv(C.Convolution2D(768, hidden_channel, 1, use_cudnn=use_cudnn))
+            s22 = AuxConv(C.Convolution2D(hidden_channel, hidden_channel, (1, 7), pad=(0, 3), use_cudnn=use_cudnn))
+            s23 = AuxConv(C.Convolution2D(hidden_channel, 192, (7, 1), pad=(3, 0), use_cudnn=use_cudnn))
             s2 = Sequential(s21, s22, s23)
 
             # double 7x7
-            s31 = AuxConv(C.Convolution2D(768, c, 1, use_cudnn=use_cudnn))
-            s32 = AuxConv(C.Convolution2D(c, c, (1, 7), pad=(0, 3), use_cudnn=use_cudnn))
-            s33 = AuxConv(C.Convolution2D(c, c, (7, 1), pad=(3, 0), use_cudnn=use_cudnn))
-            s34 = AuxConv(C.Convolution2D(c, c, (1, 7), pad=(0, 3), use_cudnn=use_cudnn))
-            s35 = AuxConv(C.Convolution2D(c, 192, (7, 1), pad=(3, 0), use_cudnn=use_cudnn))
+            s31 = AuxConv(C.Convolution2D(768, hidden_channel, 1, use_cudnn=use_cudnn))
+            s32 = AuxConv(C.Convolution2D(hidden_channel, hidden_channel, (1, 7), pad=(0, 3), use_cudnn=use_cudnn))
+            s33 = AuxConv(C.Convolution2D(hidden_channel, hidden_channel, (7, 1), pad=(3, 0), use_cudnn=use_cudnn))
+            s34 = AuxConv(C.Convolution2D(hidden_channel, hidden_channel, (1, 7), pad=(0, 3), use_cudnn=use_cudnn))
+            s35 = AuxConv(C.Convolution2D(hidden_channel, 192, (7, 1), pad=(3, 0), use_cudnn=use_cudnn))
             s3 = Sequential(s31, s32, s33, s34, s35)
 
             # pool
