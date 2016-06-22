@@ -9,7 +9,7 @@ from chainer.testing import attr
 from deepmark_chainer.net import alex
 
 
-class TestAlex(unittest.TestCase)
+class TestAlex(unittest.TestCase):
 
     def setUp(self):
         self.x = numpy.random.uniform(-1, 1, (1, 3, 224, 224)).astype(numpy.float32)
