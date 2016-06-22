@@ -13,7 +13,7 @@ from deepmark_chainer.net import big_lstm
 class TestBigLSTM(unittest.TestCase):
 
     def setUp(self):
-        self.x = numpy.random.randint(0, 10, (10, 20)).astype(numpy.int32)
+        self.x = numpy.random.randint(0, 10, (1, 20)).astype(numpy.int32)
         self.l = big_lstm.BigLSTM()
 
     def check_forward(self, xp):
