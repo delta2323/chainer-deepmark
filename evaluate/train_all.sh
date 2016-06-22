@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-for predictor in inception-v3 alex vgg resnet-50
+for predictor in inception-v3 alex-owt vgg resnet-50
 do
     python train_image.py -p ${predictor} -g -1 -b 2 -i 2
 done
