@@ -11,4 +11,3 @@ def clear_cache(cache_level):
             shutil.rmtree(cache_dir)
     if cache_level == 'none' or cache_level == 'disk':
         cuda.cupy.clear_memo()
-
