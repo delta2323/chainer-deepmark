@@ -14,7 +14,7 @@ from deepmark_chainer.utils import cache
 
 parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
 parser.add_argument('--predictor', '-p', type=str, default='inception-v3',
-                    choices=('inception-v3', 'alex', 'vgg_d', 'resnet-50'),
+                    choices=('inception-v3', 'alex', 'vgg-d', 'resnet-50'),
                     help='Network architecture')
 parser.add_argument('--seed', '-s', type=int, default=0,
                     help='Random seed')
@@ -50,7 +50,7 @@ if args.predictor == 'inception-v3':
 elif args.predictor == 'alex':
     predictor = net.alex.Alex(use_cudnn=args.cudnn)
     in_size = 224
-elif args.predictor == 'vgg_d':
+elif args.predictor == 'vgg-d':
     predictor = net.vgg_d.VGG_D(use_cudnn=args.cudnn)
     in_size = 224
 elif args.predictor == 'resnet-50':

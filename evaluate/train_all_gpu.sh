@@ -2,7 +2,7 @@
 
 for cache in none memory disk
 do
-    for predictor in inception-v3 alex vgg resnet-50
+    for predictor in inception-v3 alex vgg-d resnet-50
     do
 	python train_image.py -p ${predictor} -g 0 -b 2 -i 2 -C ${cache}
 	python train_image.py -p ${predictor} -g 0 -b 2 -i 2 -C ${cache} -c
