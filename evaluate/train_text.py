@@ -21,7 +21,7 @@ parser.add_argument('--seed', '-s', type=int, default=0,
                     help='Random seed')
 parser.add_argument('--iteration', '-i', type=int, default=10,
                     help='The number of iteration to be averaged over.')
-parser.add_argument('--seq-length', '-t', type=int, default=200,
+parser.add_argument('--seq-length', '-t', type=int, default=20,
                     help='Sequence length')
 parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
 parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
