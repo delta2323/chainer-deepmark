@@ -37,6 +37,8 @@ parser.add_argument('--cache-level', '-C', type=str, default='none',
                     'This iteration is not included in the mean elapsed time.'
                     'If we do not use GPU, we do not clear cache at all regardless of the value of '
                     'this option.')
+parser.add_argument('--vocab-size', type=int, default=10,
+                    help='Number of vocablaries.')
 parser.add_argument('--batchsize', '-b', type=int, default=50, help='Batchsize')
 args = parser.parse_args()
 
@@ -44,12 +46,11 @@ numpy.random.seed(args.seed)
 if args.gpu >= 0:
     cuda.cupy.random.seed(args.seed)
 
-vocab_size = 10
 
 if args.predictor == 'small-lstm':
-    predictor = net.small_lstm.SmallLSTM(vocab_size)
+    predictor = net.small_lstm.SmallLSTM(args.vocab_size)
 elif args.predictor == 'big-lstm':
-    predictor = net.big_lstm.BigLSTM(vocab_size)
+    predictor = net.big_lstm.BigLSTM(args.vocab_size)
 else:
     raise ValueError('Invalid architector:{}'.format(args.predictor))
 model = L.Classifier(predictor)
@@ -74,11 +75,11 @@ for iteration in six.moves.range(start_iteration, args.iteration):
         cache.clear_cache(args.cache_level)
 
     # data generation
-    data = numpy.random.randint(0, vocab_size,
+    data = numpy.random.randint(0, args.vocab_size,
                                 (args.batchsize, args.seq_length)
                                 ).astype(numpy.int32)
     data = chainer.Variable(xp.asarray(data))
-    label = numpy.random.randint(0, vocab_size,
+    label = numpy.random.randint(0, args.vocab_size,
                                  (args.batchsize, args.seq_length)
                                  ).astype(numpy.int32)
     label = chainer.Variable(xp.asarray(label))
