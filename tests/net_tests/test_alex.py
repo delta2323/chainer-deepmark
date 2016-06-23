@@ -8,6 +8,7 @@ from chainer.testing import attr
 
 from deepmark_chainer.net import alex
 
+
 class TestAlex(unittest.TestCase):
 
     def setUp(self):
