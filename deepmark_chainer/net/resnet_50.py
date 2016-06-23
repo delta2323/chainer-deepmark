@@ -63,12 +63,10 @@ class Block(link.Chain):
         self.forward = links
 
     def __call__(self, x, train):
-        for name, _ in self.forward:
+        for name, _ in sorted(self.forward):
             f = getattr(self, name)
-            h = None
-            h = f(x if name == 'a' else h, train)
-
-        return h
+            x = f(x, train)
+        return x
 
 
 class ResNet50(link.Chain):
