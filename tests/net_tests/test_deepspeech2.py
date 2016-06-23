@@ -8,6 +8,7 @@ from chainer.testing import attr
 
 from deepmark_chainer.net import deepspeech2
 
+
 class TestDeepSpeech2(unittest.TestCase):
 
     def setUp(self):
