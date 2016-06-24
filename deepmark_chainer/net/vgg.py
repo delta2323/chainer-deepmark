@@ -16,15 +16,15 @@ class VGG(link.Chain):
 
     def __init__(self, use_cudnn=True):
         super(VGG, self).__init__(
-            conv1=convolution_2d.Convolution2D(3, 64, 3, use_cudnn=use_cudnn),
-            conv2=convolution_2d.Convolution2D(64, 128, 3, use_cudnn=use_cudnn),
+            conv1=convolution_2d.Convolution2D(3, 64, 3, pad=1, use_cudnn=use_cudnn),
+            conv2=convolution_2d.Convolution2D(64, 128, 3, pad=1, use_cudnn=use_cudnn),
             conv3a=convolution_2d.Convolution2D(128, 256, 3, pad=1, use_cudnn=use_cudnn),
             conv3b=convolution_2d.Convolution2D(256, 256, 3, pad=1, use_cudnn=use_cudnn),
             conv4a=convolution_2d.Convolution2D(256, 512, 3, pad=1, use_cudnn=use_cudnn),
             conv4b=convolution_2d.Convolution2D(512, 512, 3, pad=1, use_cudnn=use_cudnn),
             conv5a=convolution_2d.Convolution2D(512, 512, 3, pad=1, use_cudnn=use_cudnn),
             conv5b=convolution_2d.Convolution2D(512, 512, 3, pad=1, use_cudnn=use_cudnn),
-            fc6=linear.Linear(25088, 4096),
+            fc6=linear.Linear(512 * 7 * 7, 4096),
             fc7=linear.Linear(4096, 4096),
             fc8=linear.Linear(4096, 1000)
         )
