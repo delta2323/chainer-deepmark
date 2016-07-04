@@ -22,6 +22,11 @@ parser.add_argument('--iteration', '-i', type=int, default=10,
                     help='The number of iteration to be averaged over.')
 parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
 parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
+parser.add_argument('--workspace-ratio', '-w', type=float, default=0.1,
+                    help='This option determins workspace size of cuDNN. '
+                    'By default, 10 precent of total GPU memory is used for cuDNN\'s workspace. '
+                    'You may see some speed-up by increasing this ratio, '
+                    'while you may train a network with larger batch size by decreasing the ratio.' )
 parser.add_argument('--cache-level', '-C', type=str, default='none',
                     choices=('none', 'memory', 'disk'),
                     help='This option determines the type of the kernel cache used.'
@@ -68,6 +73,15 @@ optimizer.setup(model)
 
 xp = cuda.cupy if args.gpu >= 0 else numpy
 
+if args.gpu >= 0:
+    free_mem, total_mem = cuda.cupy.cuda.runtime.memGetInfo()
+    size = long(total_mem * args.workspace_ratio)
+    lower_limit =    8*1024*1024
+    upper_limit = 1024*1024*1024
+    if size < lower_limit: size = lower_limit
+    if size > upper_limit: size = upper_limit
+    cuda.set_max_workspace_size(size)
+
 start_iteration = 0 if args.cache_level is None else -1
 
 forward_time = 0.0
@@ -113,3 +127,6 @@ backward_time /= args.iteration
 update_time /= args.iteration
 
 print('Mean\t{}\t{}\t{}'.format(forward_time, backward_time, update_time))
+
+image_per_sec = args.batchsize / (forward_time + backward_time + update_time)
+print('img/sec\t{}'.format(image_per_sec))
