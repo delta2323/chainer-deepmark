@@ -26,7 +26,8 @@ parser.add_argument('--workspace-ratio', '-w', type=float, default=0.1,
                     help='This option determins workspace size of cuDNN. '
                     'By default, 10 precent of total GPU memory is used for cuDNN\'s workspace. '
                     'You may see some speed-up by increasing this ratio, '
-                    'while you may train a network with larger batch size by decreasing the ratio.' )
+                    'while you may train a network with larger batch size by decreasing the ratio. '
+                    'Note that the option gets effective only when GPU is used.' )
 parser.add_argument('--cache-level', '-C', type=str, default='none',
                     choices=('none', 'memory', 'disk'),
                     help='This option determines the type of the kernel cache used.'
@@ -46,6 +47,12 @@ numpy.random.seed(args.seed)
 if args.gpu >= 0:
     cuda.cupy.random.seed(args.seed)
 
+if args.gpu >= 0:
+    if args.workspace_ratio < 0.0 or args.workspace_ratio > 1.0:
+        raise ValueError('Invalid workspace ratio:{}  (valid interval:[0.0,1.0])'.format(args.workspace_ratio))
+    _free_mem, total_mem = cuda.cupy.cuda.runtime.memGetInfo()
+    size = long(total_mem * args.workspace_ratio)
+    cuda.set_max_workspace_size(size)
 
 in_channels = 3
 
@@ -72,15 +79,6 @@ optimizer = O.SGD()
 optimizer.setup(model)
 
 xp = cuda.cupy if args.gpu >= 0 else numpy
-
-if args.gpu >= 0:
-    free_mem, total_mem = cuda.cupy.cuda.runtime.memGetInfo()
-    size = long(total_mem * args.workspace_ratio)
-    lower_limit =    8*1024*1024
-    upper_limit = 1024*1024*1024
-    if size < lower_limit: size = lower_limit
-    if size > upper_limit: size = upper_limit
-    cuda.set_max_workspace_size(size)
 
 start_iteration = 0 if args.cache_level is None else -1
 
