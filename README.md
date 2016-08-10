@@ -1,4 +1,4 @@
-# deepmark-chainer
+# Deepmark-Chainer
 Evaluation scripts of Chainer for [deepmark](https://github.com/DeepMark/deepmark)
 
 ## Usage
