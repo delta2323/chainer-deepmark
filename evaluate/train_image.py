@@ -1,44 +1,44 @@
 import argparse
 
-import chainer
+from chainer import cuda
 from chainer import links as L
 from chainer import optimizers as O
-from chainer import cuda
 import numpy
 import six
 
 from deepmark_chainer import net
-from deepmark_chainer.utils import timer
 from deepmark_chainer.utils import cache
+from deepmark_chainer.utils import timer
 
 
-parser = argparse.ArgumentParser(description='Deepmark benchmark for image data.')
+parser = argparse.ArgumentParser(
+    description='Deepmark benchmark for image data.')
 parser.add_argument('--predictor', '-p', type=str, default='inception-v3',
                     choices=('inception-v3', 'alex-owt', 'vgg', 'resnet-50'),
                     help='Network architecture')
 parser.add_argument('--seed', '-s', type=int, default=0,
                     help='Random seed')
-parser.add_argument('--iteration', '-i', type=int, default=10,
+parser.add_argument('--iteration', '-i', type=int, default=5,
                     help='The number of iteration to be averaged over.')
-parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
-parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
+parser.add_argument('--gpu', '-g', type=int, default=-1,
+                    help='GPU to use. Negative value to use CPU')
+parser.add_argument('--cudnn', '-c', action='store_true',
+                    help='If this flag is set, cuDNN is enabled.')
 parser.add_argument('--dry-run', '-d', type=int, default=5,
                     help='The number of iterations of a dry run '
                     'not counted towards final timing')
 parser.add_argument('--cache-level', '-C', type=str, default='none',
                     choices=('none', 'memory', 'disk'),
-                    help='This option determines the type of the kernel cache used.'
+                    help='This option determines the type of the kernel '
+                    'cache used.'
                     'By default, memory cache and disk cache are removed '
                     'at the beginning of every iteration. '
                     'Otherwise, elapsed times of each iteration are '
-                    'measured with corresponding cache enabled. '
-                    'If either cache is enabled, this script operates one additional '
-                    'iteration for burn-in before measurement. '
-                    'This iteration is not included in the mean elapsed time.'
-                    'If we do not use GPU, we do not clear cache at all regardless of the value of '
-                    'this option.')
-parser.add_argument('--batchsize', '-b', type=int, default=32, help='Batchsize')
+                    'measured with corresponding cache enabled. ')
+parser.add_argument('--batchsize', '-b', type=int, default=32,
+                    help='Batchsize')
 args = parser.parse_args()
+print(args)
 
 numpy.random.seed(args.seed)
 if args.gpu >= 0:
