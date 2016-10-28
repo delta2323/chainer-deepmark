@@ -1,4 +1,5 @@
 from chainer.functions.array import concat
+from chainer.functions.loss import softmax_cross_entropy as S
 from chainer.functions.noise import dropout
 from chainer.functions.pooling import average_pooling_2d as A
 from chainer.functions.pooling import max_pooling_2d as M
@@ -235,4 +236,21 @@ class InceptionV3(link.Chain):
         y = classifier(x, train)
         self.y = y
         self.y_aux = y_aux
-        return y
+        return y, y_aux
+
+
+class Classifier(link.Chain):
+
+    def __init__(self, predictor):
+        super(Classifier, self).__init__(predictor=predictor)
+
+    def __call__(self, *args):
+
+        assert len(args) >= 2
+        x = args[:-1]
+        t = args[-1]
+        self.y, self.y_aux = self.predictor(*x)
+        self.loss = S.softmax_cross_entropy(self.y, t)
+        self.loss += S.softmax_cross_entropy(self.y_aux, t)
+        return self.loss
+
