@@ -46,19 +46,23 @@ in_channels = 3
 
 if args.predictor == 'inception-v3':
     predictor = net.inception_v3.InceptionV3(use_cudnn=args.cudnn)
+    model = net.inception_v3.Classifier(predictor)
     in_size = 299
 elif args.predictor == 'alex-owt':
     predictor = net.alex_owt.AlexOWT(use_cudnn=args.cudnn)
+    model = L.Classifier(predictor)
     in_size = 224
 elif args.predictor == 'vgg':
     predictor = net.vgg.VGG(use_cudnn=args.cudnn)
+    model = L.Classifier(predictor)
     in_size = 224
 elif args.predictor == 'resnet-50':
     predictor = net.resnet_50.ResNet50(use_cudnn=args.cudnn)
+    model = L.Classifier(predictor)
     in_size = 224
 else:
     raise ValueError('Invalid architector:{}'.format(args.predictor))
-model = L.Classifier(predictor)
+
 
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
