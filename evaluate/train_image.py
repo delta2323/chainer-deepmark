@@ -22,6 +22,9 @@ parser.add_argument('--iteration', '-i', type=int, default=10,
                     help='The number of iteration to be averaged over.')
 parser.add_argument('--gpu', '-g', type=int, default=-1, help='GPU to use. Negative value to use CPU')
 parser.add_argument('--cudnn', '-c', action='store_true', help='If this flag is set, cuDNN is enabled.')
+parser.add_argument('--dry-run', '-d', type=int, default=5,
+                    help='The number of iterations of a dry run '
+                    'not counted towards final timing')
 parser.add_argument('--cache-level', '-C', type=str, default='none',
                     choices=('none', 'memory', 'disk'),
                     help='This option determines the type of the kernel cache used.'
@@ -43,6 +46,7 @@ if args.gpu >= 0:
 
 
 in_channels = 3
+label_num = 100
 
 if args.predictor == 'inception-v3':
     predictor = net.inception_v3.InceptionV3(use_cudnn=args.cudnn)
@@ -73,48 +77,39 @@ optimizer.setup(model)
 
 xp = cuda.cupy if args.gpu >= 0 else numpy
 
-start_iteration = 0 if args.cache_level is None else -1
 
-forward_time = 0.0
-backward_time = 0.0
-update_time = 0.0
-print('iteration\tforward\tbackward\tupdate (in seconds)')
-for iteration in six.moves.range(start_iteration, args.iteration):
-    if args.gpu >= 0:
-        cache.clear_cache(args.cache_level)
+# data generation
+total_iteration = args.dry_run + args.iteration
+shape = (total_iteration, args.batchsize, in_channels, in_size, in_size)
+data = xp.random.uniform(-1, 1, shape)
+data = data.astype(numpy.float32, copy=False)
+label = xp.random.randint(0, label_num, (total_iteration, args.batchsize))
+label = label.astype(numpy.int32, copy=False)
 
-    # data generation
-    data = numpy.random.uniform(-1, 1,
-                                (args.batchsize, in_channels, in_size, in_size)).astype(numpy.float32)
-    data = chainer.Variable(xp.asarray(data))
-    label = numpy.zeros((args.batchsize,), dtype=numpy.int32)
-    label = chainer.Variable(xp.asarray(label))
+# dry run
+for iteration in six.moves.range(args.dry_run):
+    print('Dry Run\t{}'.format(iteration))
 
-    # forward
-    with timer.get_timer(xp) as t:
-        loss = model(data, label)
-    forward_time_one = t.total_time()
+    loss = model(data[iteration], label[iteration])
+    model.cleargrads()
+    loss.backward()
+    optimizer.update()
 
-    # backward
-    with timer.get_timer(xp) as t:
+# evaluation
+with timer.get_timer(xp) as t:
+    for iteration in six.moves.range(args.iteration):
+        print('Iteration\t{}'.format(iteration))
+        if args.gpu >= 0:
+            cache.clear_cache(args.cache_level)
+
+        idx = iteration + args.dry_run
+        loss = model(data[idx], label[idx])
+        model.cleargrads()
         loss.backward()
-    backward_time_one = t.total_time()
-
-    # parameter update
-    with timer.get_timer(xp) as t:
         optimizer.update()
-    update_time_one = t.total_time()
 
-    if iteration < 0:
-        print('Burn-in\t{}\t{}\t{}'.format(forward_time_one, backward_time_one, update_time_one))
-    else:
-        print('{}\t{}\t{}\t{}'.format(iteration, forward_time_one, backward_time_one, update_time_one))
-        forward_time += forward_time_one
-        backward_time += backward_time_one
-        update_time += update_time_one
 
-forward_time /= args.iteration
-backward_time /= args.iteration
-update_time /= args.iteration
+total_time = t.total_time()
+averate_gime = total_time / args.iteration
 
-print('Mean\t{}\t{}\t{}'.format(forward_time, backward_time, update_time))
+print('Total Time\t{}'.format(total_time))
