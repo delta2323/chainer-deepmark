@@ -71,7 +71,7 @@ else:
 if args.gpu >= 0:
     cuda.get_device(args.gpu).use()
     model.to_gpu()
-optimizer = O.SGD()
+optimizer = O.SGD(0.0001)
 optimizer.use_cleargrads()
 optimizer.setup(model)
 
