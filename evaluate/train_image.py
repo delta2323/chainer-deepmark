@@ -27,6 +27,12 @@ parser.add_argument('--cudnn', '-c', action='store_true',
 parser.add_argument('--dry-run', '-d', type=int, default=5,
                     help='The number of iterations of a dry run '
                     'not counted towards final timing')
+parser.add_argument('--workspace-ratio', '-w', type=float, default=0.1,
+                    help='This option determins workspace size of cuDNN. '
+                    'By default, 10 precent of total GPU memory is used for cuDNN\'s workspace. '
+                    'You may see some speed-up by increasing this ratio, '
+                    'while you may train a network with larger batch size by decreasing the ratio. '
+                    'Note that the option gets effective only when GPU is used.' )
 parser.add_argument('--cache-level', '-C', type=str, default='none',
                     choices=('none', 'memory', 'disk'),
                     help='This option determines the type of the kernel '
@@ -44,6 +50,12 @@ numpy.random.seed(args.seed)
 if args.gpu >= 0:
     cuda.cupy.random.seed(args.seed)
 
+if args.gpu >= 0:
+    if args.workspace_ratio < 0.0 or args.workspace_ratio > 1.0:
+        raise ValueError('Invalid workspace ratio:{}  (valid interval:[0.0,1.0])'.format(args.workspace_ratio))
+    _free_mem, total_mem = cuda.cupy.cuda.runtime.memGetInfo()
+    size = long(total_mem * args.workspace_ratio)
+    cuda.set_max_workspace_size(size)
 
 in_channels = 3
 label_num = 100
