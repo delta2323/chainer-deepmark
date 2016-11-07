@@ -109,7 +109,21 @@ with timer.get_timer(xp) as t:
         optimizer.update()
 
 
-total_time = t.total_time()
-averate_gime = total_time / args.iteration
+time_taken_per_iter = t.total_time() / args.iteration
+examples_per_sec = 1 / time_taken_per_iter * args.batchsize
 
-print('Total Time\t{}'.format(total_time))
+if args.gpu > 0:
+    device = 'GPU{}'.format(args.gpu)
+    if args.cudnn:
+        backend = 'cuDNN'
+    else:
+        backend = 'CuPy'
+else:
+    device = 'CPU'
+    backend = 'NumPy'
+print('Device:{}\tNetwork:{}\tBackend:{}\t'
+      'Batchsize:{}\tIter (ms):{}\t'
+      'Examples/sec:{}'.format(device, args.predictor,
+                               backend, args.batchsize,
+                               time_taken_per_iter * 1000,
+                               examples_per_sec))
