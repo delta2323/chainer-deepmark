@@ -242,7 +242,7 @@ class InceptionV3(link.Chain):
 class InceptionV3Classifier(link.Chain):
 
     def __init__(self, predictor):
-        super(Classifier, self).__init__(predictor=predictor)
+        super(InceptionV3Classifier, self).__init__(predictor=predictor)
 
     def __call__(self, *args):
 
@@ -253,4 +253,3 @@ class InceptionV3Classifier(link.Chain):
         self.loss = S.softmax_cross_entropy(self.y, t)
         self.loss += S.softmax_cross_entropy(self.y_aux, t)
         return self.loss
-
