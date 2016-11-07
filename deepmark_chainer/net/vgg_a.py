@@ -5,7 +5,7 @@ from chainer.links.connection import convolution_2d
 from chainer.links.connection import linear
 
 
-class VGG(link.Chain):
+class VGG_A(link.Chain):
     """VGG (network A) without dropout.
 
     Reference: https://arxiv.org/abs/1409.1556
@@ -15,7 +15,7 @@ class VGG(link.Chain):
     """
 
     def __init__(self, use_cudnn=True):
-        super(VGG, self).__init__(
+        super(VGG_A, self).__init__(
             conv1=convolution_2d.Convolution2D(3, 64, 3, use_cudnn=use_cudnn),
             conv2=convolution_2d.Convolution2D(64, 128, 3, use_cudnn=use_cudnn),
             conv3a=convolution_2d.Convolution2D(128, 256, 3, pad=1, use_cudnn=use_cudnn),
@@ -47,6 +47,3 @@ class VGG(link.Chain):
         h = self.fc6(h)
         h = self.fc7(h)
         return self.fc8(h)
-
-
-VGG_A = VGG

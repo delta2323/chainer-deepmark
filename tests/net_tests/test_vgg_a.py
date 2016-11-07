@@ -6,14 +6,14 @@ import chainer
 from chainer import cuda
 from chainer.testing import attr
 
-from deepmark_chainer.net import vgg
+from deepmark_chainer.net import vgg_a
 
 
-class TestVGG(unittest.TestCase):
+class TestVGG_A(unittest.TestCase):
 
     def setUp(self):
         self.x = numpy.random.uniform(-1, 1, (1, 3, 224, 224)).astype(numpy.float32)
-        self.l = vgg.VGG()
+        self.l = vgg_a.VGG_A()
 
     def check_forward(self, xp):
         x = chainer.Variable(xp.asarray(self.x))
