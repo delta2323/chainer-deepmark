@@ -239,7 +239,7 @@ class InceptionV3(link.Chain):
         return y, y_aux
 
 
-class Classifier(link.Chain):
+class InceptionV3Classifier(link.Chain):
 
     def __init__(self, predictor):
         super(Classifier, self).__init__(predictor=predictor)

@@ -50,7 +50,7 @@ label_num = 100
 
 if args.predictor == 'inception-v3':
     predictor = net.inception_v3.InceptionV3(use_cudnn=args.cudnn)
-    model = net.inception_v3.Classifier(predictor)
+    model = net.inception_v3.InceptionV3Classifier(predictor)
     in_size = 299
 elif args.predictor == 'alex-owt':
     predictor = net.alex_owt.AlexOWT(use_cudnn=args.cudnn)
