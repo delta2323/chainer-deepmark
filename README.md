@@ -19,8 +19,8 @@ python evaluate/train_text.py
 ||VGG-D|Y||
 ||ResNet50|Y||
 |Video|C3D|Needs fix|Issue #5, waiting for MaxPoolingND (Chainer issue #1353)|
-|Audio|DeepSpeech2|Needs fix||
-||MSR 5FC layer|Needs fix||
+|Audio|DeepSpeech2|Y|Needs check if the architecture is same as Torch deepmark's|
+||MSR 5FC layer|Y|Needs check if the architecture is same as Torch deepmark's|
 |Text|BigLSTM|Working|Issue #2, PR #11|
 ||SmallLSTM|Working|Issue #19|
 
