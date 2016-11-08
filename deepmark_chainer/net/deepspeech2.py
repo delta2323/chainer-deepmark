@@ -1,5 +1,6 @@
 import six
 
+from chainer.functions.activation import clipped_relu
 from chainer.functions.array import reshape
 from chainer.functions.array import split_axis
 from chainer import link
@@ -55,7 +56,7 @@ class StatefulLinearRNN(link.Chain):
         return self.h
 
 
-class BRNN(link.Chain):
+class BRNNReLU(link.Chain):
 
     def __init__(self, input_dim, output_dim, rnn_unit):
         if rnn_unit == 'LSTM':
@@ -69,7 +70,7 @@ class BRNN(link.Chain):
             reverse = StatefulLinearRNN(input_dim, output_dim)
         else:
             raise ValueError('Invalid rnn_unit:{}'.format(rnn_unit))
-        super(BRNN, self).__init__(forward=forward, reverse=reverse)
+        super(BRNNReLU, self).__init__(forward=forward, reverse=reverse)
 
     def reset_state(self):
         self.forward.reset_state()
@@ -81,20 +82,22 @@ class BRNN(link.Chain):
         x_reverse = [self.reverse(xs[n], train) for n
                      in six.moves.range(N - 1, -1, -1)]
         x_reverse.reverse()
-        return [x_f + x_r for x_f, x_r in zip(x_forward, x_reverse)]
+        return [clipped_relu.clipped_relu(x_f + x_r)
+                for x_f, x_r in zip(x_forward, x_reverse)]
 
 
-class ConvBN(link.Chain):
+class ConvBNReLU(link.Chain):
 
     def __init__(self, *args, **kwargs):
         conv = C.Convolution2D(*args, **kwargs)
         out_channel = len(conv.W.data)
         batch_norm = B.BatchNormalization(out_channel)
-        super(ConvBN, self).__init__(conv=conv, batch_norm=batch_norm)
+        super(ConvBNReLU, self).__init__(conv=conv, batch_norm=batch_norm)
 
     def __call__(self, x, train=True):
         x = self.conv(x)
-        return self.batch_norm(x, test=not train)
+        x = self.batch_norm(x, test=not train)
+        return clipped_relu.clipped_relu(x)
 
 
 class LinearBN(link.Chain):
@@ -110,30 +113,23 @@ class LinearBN(link.Chain):
         return self.batch_norm(x, test=not train)
 
 
-class Sequential(link.ChainList):
-
-    def __call__(self, x, *args, **kwargs):
-        for l in self:
-            x = l(x, *args, **kwargs)
-        return x
-
-
 class DeepSpeech2(link.Chain):
 
-    def __init__(self, channel_dim=32, hidden_dim=1760, out_dim=29, rnn_unit='Linear', use_cudnn=True):
-        c1 = ConvBN(1, channel_dim, (5, 20), 2, use_cudnn=use_cudnn)
-        c2 = ConvBN(channel_dim, channel_dim, (5, 10), (1, 2), use_cudnn=use_cudnn)
-        convolution = Sequential(c1, c2)
+    def __init__(self, channel_dim=32, hidden_dim=1760, out_dim=29,
+                 rnn_unit='Linear', use_cudnn=True):
+        c1 = ConvBNReLU(1, channel_dim, (5, 20), 2, use_cudnn=use_cudnn)
+        c2 = ConvBNReLU(channel_dim, channel_dim, (5, 10), (1, 2), use_cudnn=use_cudnn)
+        convolution = link.ChainList(c1, c2)
 
-        brnn1 = BRNN(31 * channel_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn2 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn3 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn4 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn5 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn6 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn7 = BRNN(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        recurrent = Sequential(brnn1, brnn2, brnn3, brnn4,
-                               brnn5, brnn6, brnn7)
+        brnn1 = BRNNReLU(31 * channel_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn2 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn3 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn4 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn5 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn6 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn7 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        recurrent = link.ChainList(brnn1, brnn2, brnn3, brnn4,
+                                   brnn5, brnn6, brnn7)
 
         fc1 = LinearBN(hidden_dim, hidden_dim)
         fc2 = L.Linear(hidden_dim, out_dim)
@@ -142,7 +138,19 @@ class DeepSpeech2(link.Chain):
                                           recurrent=recurrent,
                                           linear=linear)
 
-    def _linear(self, xs, train=True):
+
+    def _convolution(self, x, train):
+        for c in self.convolution:
+            x = c(x, train)
+        return x
+
+    def _recurrent(self, xs, train):
+        for r in self.recurrent:
+            r.reset_state()
+            xs = r(xs, train)
+        return xs
+
+    def _linear(self, xs, train):
         ret = []
         for x in xs:
             x = self.linear[0](x, train)
@@ -152,12 +160,10 @@ class DeepSpeech2(link.Chain):
 
     def __call__(self, x, train=True):
         x = reshape.reshape(x, (len(x.data), 1) + x.data.shape[1:])
-        x = self.convolution(x, train)
+        x = self._convolution(x, train)
         xs = split_axis.split_axis(x, x.data.shape[2], 2)
         for x in xs:
             x.data = self.xp.ascontiguousarray(x.data)
-        for r in self.recurrent:
-            r.reset_state()
-        xs = self.recurrent(xs, train)
+        xs = self._recurrent(xs, train)
         xs = self._linear(xs, train)
         return xs
