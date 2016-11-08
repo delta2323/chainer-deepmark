@@ -14,7 +14,7 @@ from deepmark_chainer.utils import timer
 parser = argparse.ArgumentParser(
     description='Deepmark benchmark for image data.')
 parser.add_argument('--predictor', '-p', type=str, default='inception-v3',
-                    choices=('inception-v3', 'alex-owt', 'vgg', 'resnet-50'),
+                    choices=('inception-v3', 'alex-owt', 'vgg-d', 'resnet-50'),
                     help='Network architecture')
 parser.add_argument('--seed', '-s', type=int, default=0,
                     help='Random seed')
@@ -68,8 +68,8 @@ elif args.predictor == 'alex-owt':
     predictor = net.alex_owt.AlexOWT(use_cudnn=args.cudnn)
     model = L.Classifier(predictor)
     in_size = 224
-elif args.predictor == 'vgg':
-    predictor = net.vgg.VGG(use_cudnn=args.cudnn)
+elif args.predictor == 'vgg-d':
+    predictor = net.vgg_d.VGG_D(use_cudnn=args.cudnn)
     model = L.Classifier(predictor)
     in_size = 224
 elif args.predictor == 'resnet-50':

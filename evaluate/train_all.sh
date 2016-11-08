@@ -8,7 +8,7 @@ function check_exit_code {
 }
 
 
-for predictor in inception-v3 alex-owt vgg resnet-50
+for predictor in inception-v3 alex-owt vgg-d resnet-50
 do
     python train_image.py -p ${predictor} -g -1 -b 1 -i 1
     check_exit_code
