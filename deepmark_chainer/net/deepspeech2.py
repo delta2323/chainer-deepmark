@@ -1,6 +1,7 @@
 import six
 
 from chainer.functions.activation import clipped_relu
+from chainer.functions.array import concat
 from chainer.functions.array import reshape
 from chainer.functions.array import split_axis
 from chainer import link
@@ -59,6 +60,8 @@ class StatefulLinearRNN(link.Chain):
 class BRNNReLU(link.Chain):
 
     def __init__(self, input_dim, output_dim, rnn_unit):
+        assert output_dim % 2 == 0
+        output_dim //= 2  # output dim for each direction is halved
         if rnn_unit == 'LSTM':
             forward = lstm.LSTM(input_dim, output_dim)
             reverse = lstm.LSTM(input_dim, output_dim)
@@ -82,8 +85,9 @@ class BRNNReLU(link.Chain):
         x_reverse = [self.reverse(xs[n], train) for n
                      in six.moves.range(N - 1, -1, -1)]
         x_reverse.reverse()
-        return [clipped_relu.clipped_relu(x_f + x_r)
-                for x_f, x_r in zip(x_forward, x_reverse)]
+        xs = [concat.concat((x_f, x_r)) for x_f, x_r
+              in six.moves.zip(x_forward, x_reverse)]
+        return [clipped_relu.clipped_relu(x) for x in xs]
 
 
 class ConvBNReLU(link.Chain):
@@ -121,17 +125,17 @@ class DeepSpeech2(link.Chain):
         c2 = ConvBNReLU(channel_dim, channel_dim, (5, 10), (1, 2), use_cudnn=use_cudnn)
         convolution = link.ChainList(c1, c2)
 
-        brnn1 = BRNNReLU(31 * channel_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn2 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn3 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn4 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn5 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn6 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
-        brnn7 = BRNNReLU(hidden_dim, hidden_dim, rnn_unit=rnn_unit)
+        brnn1 = BRNNReLU(31 * channel_dim, hidden_dim * 2, rnn_unit=rnn_unit)
+        brnn2 = BRNNReLU(hidden_dim * 2, hidden_dim * 2, rnn_unit=rnn_unit)
+        brnn3 = BRNNReLU(hidden_dim * 2, hidden_dim * 2, rnn_unit=rnn_unit)
+        brnn4 = BRNNReLU(hidden_dim * 2, hidden_dim * 2, rnn_unit=rnn_unit)
+        brnn5 = BRNNReLU(hidden_dim * 2, hidden_dim * 2, rnn_unit=rnn_unit)
+        brnn6 = BRNNReLU(hidden_dim * 2, hidden_dim * 2, rnn_unit=rnn_unit)
+        brnn7 = BRNNReLU(hidden_dim * 2, hidden_dim * 2, rnn_unit=rnn_unit)
         recurrent = link.ChainList(brnn1, brnn2, brnn3, brnn4,
                                    brnn5, brnn6, brnn7)
 
-        fc1 = LinearBN(hidden_dim, hidden_dim)
+        fc1 = LinearBN(hidden_dim * 2, hidden_dim)
         fc2 = L.Linear(hidden_dim, out_dim)
         linear = link.ChainList(fc1, fc2)
         super(DeepSpeech2, self).__init__(convolution=convolution,
