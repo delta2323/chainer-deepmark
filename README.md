@@ -12,13 +12,13 @@ python evaluate/train_text.py
 
 ## Architecture Support Status
 
-|Category|Arcitecture|Support|Comment|
+|Category|Arcitecture|Status|Comment|
 |---|---|---|---|
 |Image|InceptionV3-batchnorm|Y||
 ||Alexnet-OWT|Y||
 ||VGG-D|Y||
 ||ResNet50|Y||
-|Video|C3D|Needs Fix|Issue #5, waiting for MaxPoolingND (Chainer issue #1353)|
+|Video|C3D|Needs fix|Issue #5, waiting for MaxPoolingND (Chainer issue #1353)|
 |Audio|DeepSpeech2|Needs fix||
 ||MSR 5FC layer|Needs fix||
 |Text|BigLSTM|Working|Issue #2, PR #11|
