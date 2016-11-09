@@ -5,7 +5,7 @@ Evaluation scripts of Chainer for [deepmark](https://github.com/DeepMark/deepmar
 
 ```
 python evaluate/train_image.py
-python evaluate/train_video.py
+python evaluate/train_movie.py
 python evaluate/train_audio.py
 python evaluate/train_text.py
 ```
@@ -18,7 +18,7 @@ python evaluate/train_text.py
 ||Alexnet-OWT|Y||
 ||VGG-D|Y||
 ||ResNet50|Y||
-|Video|C3D|Need fix|Issue #5, waiting for MaxPoolingND (Chainer issue #1353)|
+|Movie|C3D|Need fix|Issue #5, waiting for MaxPoolingND (Chainer issue #1353)|
 |Audio|DeepSpeech2|Need fix|PR #20|
 ||MSR 5FC layer|Teporary implementation||
 |Text|BigLSTM|Working|Issue #2, PR #11|
@@ -28,7 +28,7 @@ python evaluate/train_text.py
 |Category|Status|Comment|
 |---|---|---|
 |Image|Y||
-|Video|Need fix||
+|Movie|Need fix||
 |Audio|Need fix||
 |Text|Need fix||
 
