@@ -5,8 +5,8 @@ Evaluation scripts of Chainer for [deepmark](https://github.com/DeepMark/deepmar
 
 ```
 python evaluate/train_image.py
+python evaluate/train_video.py
 python evaluate/train_audio.py
-python evaluate/train_movie.py
 python evaluate/train_text.py
 ```
 
@@ -23,6 +23,14 @@ python evaluate/train_text.py
 ||MSR 5FC layer|Teporary implementation||
 |Text|BigLSTM|Working|Issue #2, PR #11|
 ||SmallLSTM|Working|Issue #19|
+
+## Evaluation Script Status
+|Category|Status|Comment|
+|---|---|---|
+|Image|Y||
+|Video|Need fix||
+|Audio|Need fix||
+|Text|Need fix||
 
 ## LICENSE
 
