@@ -25,12 +25,12 @@ python evaluate/train_text.py
 ||SmallLSTM|Working|Issue #19|
 
 ## Evaluation Script Status
-|Category|Status|Comment|
+|Category|Single GPU|Multi GPU|
 |---|---|---|
-|Image|Y||
-|Movie|Need fix||
-|Audio|Need fix||
-|Text|Need fix||
+|Image|Y|N|
+|Movie|Need fix|N|
+|Audio|Need fix|N|
+|Text|Need fix|N|
 
 ## LICENSE
 
