@@ -16,19 +16,19 @@ class BigLSTM(link.Chain):
 
     """
 
-    def __init__(self, vocab_size=10, rnn_unit='LSTM'):
-        embed = embed_id.EmbedID(vocab_size, 10)
+    def __init__(self, vocab_size=793471, embed_dim=8192, rnn_unit='LSTM'):
+        embed = embed_id.EmbedID(vocab_size, embed_dim)
         if rnn_unit == 'LSTM':
-            rnns = link.ChainList(lstm.LSTM(10, 20),
-                                  lstm.LSTM(20, 20))
+            rnns = link.ChainList(lstm.LSTM(embed_dim, 8192),
+                                  lstm.LSTM(8192, 1024))
         elif rnn_unit == 'GRU':
-            rnns = link.ChainList(gru.StatefulGRU(20, 10),
-                                  gru.StatefulGRU(20, 20))
+            rnns = link.ChainList(gru.StatefulGRU(8192, embed_dim),
+                                  gru.StatefulGRU(1024, 8192))
         else:
             raise ValueError('Invalid RNN unit:{}'.format(rnn_unit))
 
-        linears = link.ChainList(linear.Linear(20, 10),
-                                 linear.Linear(10, vocab_size))
+        linears = link.ChainList(linear.Linear(1024, 8192),
+                                 linear.Linear(8192, 1024))
         super(BigLSTM, self).__init__(embed=embed, rnns=rnns,
                                       linears=linears)
         self.train = True
