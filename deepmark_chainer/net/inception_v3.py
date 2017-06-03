@@ -23,7 +23,7 @@ class AuxConv(link.Chain):
         if self.pool:
             x = self.pool(x)
         x = self.conv(x)
-        if self.batch_norm:
+        if hasattr(self, 'batch_norm'):
             x = self.batch_norm(x, test=not train)
         return x
 
